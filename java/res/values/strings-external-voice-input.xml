@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_input_settings_external_use_speech_panel">Use speech panel for external voice input</string>
+    <string name="voice_input_settings_external_use_speech_panel_subtitle">Open the speech panel of your voice app instead of switching to its keyboard. Needs an app that supports the standard speech intent, such as FUTO Voice Input or Notune.</string>
+    <string name="external_voice_input_no_app">No app found for voice input</string>
+</resources>

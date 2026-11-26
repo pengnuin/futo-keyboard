@@ -379,6 +379,26 @@ val SYSTEM_VOICE_INPUT_PACKAGE = SettingsKey(
     default = ""
 )
 
+val USE_ANDROID_SPEECH_RECOGNIZER = SettingsKey(
+    key = booleanPreferencesKey("useAndroidSpeechRecognizer"),
+    default = false
+)
+
+val SPEECH_RECOGNIZER_COMPONENT = SettingsKey(
+    key = stringPreferencesKey("speechRecognizerComponent"),
+    default = ""
+)
+
+val SPEECH_RECOGNIZER_PARTIAL_RESULTS = SettingsKey(
+    key = booleanPreferencesKey("speechRecognizerPartialResults"),
+    default = true
+)
+
+val SPEECH_RECOGNIZER_PREFER_OFFLINE = SettingsKey(
+    key = booleanPreferencesKey("speechRecognizerPreferOffline"),
+    default = true
+)
+
 val USE_TRANSFORMER_FINETUNING = SettingsKey(
     key = booleanPreferencesKey("useTransformerFinetuning2"),
     default = false

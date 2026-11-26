@@ -12,6 +12,7 @@ import org.futo.inputmethod.latin.settings.Settings
 import org.futo.inputmethod.latin.uix.Action
 import org.futo.inputmethod.latin.uix.PreferenceUtils
 import org.futo.inputmethod.latin.uix.SettingsKey
+import org.futo.inputmethod.latin.uix.USE_ANDROID_SPEECH_RECOGNIZER
 import org.futo.inputmethod.latin.uix.USE_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.actions.clipboard.ClipboardHistoryAction
 import org.futo.inputmethod.latin.uix.actions.fonttyper.FontTyperAction
@@ -70,8 +71,11 @@ private fun List<Action>.verifyNamesAreUnique(): List<Action> {
 object ActionRegistry {
     fun getActionOverride(context: Context, action: Action): Action {
         return if(action == VoiceInputAction || action == SystemVoiceInputAction) {
+            val useAndroidSpeechRecognizer = context.getSetting(USE_ANDROID_SPEECH_RECOGNIZER)
             val useSystemVoiceInput = context.getSetting(USE_SYSTEM_VOICE_INPUT)
-            if(useSystemVoiceInput) {
+            if(useAndroidSpeechRecognizer) {
+                VoiceInputAction
+            } else if(useSystemVoiceInput) {
                 SystemVoiceInputAction
             } else {
                 VoiceInputAction

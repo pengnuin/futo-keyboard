@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_input_settings_use_android_speech_recognizer">Use Android SpeechRecognizer</string>
+    <string name="voice_input_settings_use_android_speech_recognizer_subtitle">Use an installed Android RecognitionService inline inside FUTO Keyboard instead of the built-in Whisper models.</string>
+    <string name="voice_input_settings_speech_recognizer_service">Recognition service</string>
+    <string name="voice_input_settings_speech_recognizer_service_default">System default</string>
+    <string name="voice_input_settings_speech_recognizer_partial_results">Partial results</string>
+    <string name="voice_input_settings_speech_recognizer_partial_results_subtitle">Insert interim text as you speak when supported by the recognition service.</string>
+    <string name="voice_input_settings_speech_recognizer_prefer_offline">Prefer offline recognition</string>
+    <string name="voice_input_settings_speech_recognizer_prefer_offline_subtitle">Ask the recognition service to prefer on-device models.</string>
+    <string name="voice_input_settings_speech_recognizer_unavailable">No Android speech recognition service is available on this device.</string>
+
+    <string name="speech_recognizer_initializing">Initializing…</string>
+    <string name="speech_recognizer_listening">Listening… Tap to finish</string>
+    <string name="speech_recognizer_processing">Processing…</string>
+    <string name="speech_recognizer_permission_required">Microphone permission required. Tap to grant.</string>
+    <string name="speech_recognizer_error_tap_retry">Tap to retry</string>
+    <string name="speech_recognizer_cancel">Cancel</string>
+    <string name="speech_recognizer_error_audio">Audio recording error</string>
+    <string name="speech_recognizer_error_client">Speech recognizer client error</string>
+    <string name="speech_recognizer_error_network">Network error</string>
+    <string name="speech_recognizer_error_no_match">No speech recognized</string>
+    <string name="speech_recognizer_error_busy">Recognition service is busy</string>
+    <string name="speech_recognizer_error_server">Recognition service error</string>
+    <string name="speech_recognizer_error_timeout">No speech input</string>
+    <string name="speech_recognizer_error_too_many_requests">Too many requests</string>
+    <string name="speech_recognizer_error_language">Language not supported</string>
+    <string name="speech_recognizer_error_unknown">Speech recognition failed (%d)</string>
+</resources>

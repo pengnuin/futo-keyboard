@@ -33,11 +33,14 @@ import org.futo.inputmethod.latin.uix.CAN_EXPAND_SPACE
 import org.futo.inputmethod.latin.uix.CloseResult
 import org.futo.inputmethod.latin.uix.DISALLOW_SYMBOLS
 import org.futo.inputmethod.latin.uix.ENABLE_SOUND
+import org.futo.inputmethod.latin.uix.ExternalSpeechInput
 import org.futo.inputmethod.latin.uix.KeyboardManagerForAction
 import org.futo.inputmethod.latin.uix.PREFER_BLUETOOTH
 import org.futo.inputmethod.latin.uix.PersistentActionState
 import org.futo.inputmethod.latin.uix.ResourceHelper
+import org.futo.inputmethod.latin.uix.USE_ANDROID_SPEECH_RECOGNIZER
 import org.futo.inputmethod.latin.uix.USE_PERSONAL_DICT
+import org.futo.inputmethod.latin.uix.USE_SPEECH_INTENT_FOR_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.USE_VAD_AUTOSTOP
 import org.futo.inputmethod.latin.uix.VERBOSE_PROGRESS
 import org.futo.inputmethod.latin.uix.getSetting
@@ -65,7 +68,10 @@ val SystemVoiceInputAction = Action(
     icon = R.drawable.mic_fill,
     name = R.string.action_system_voice_input_title,
     simplePressImpl = { it, _ ->
-        it.triggerSystemVoiceInput()
+        val handled = it.getContext().getSetting(USE_SPEECH_INTENT_FOR_SYSTEM_VOICE_INPUT) && ExternalSpeechInput.start(it)
+        if(!handled) {
+            it.triggerSystemVoiceInput()
+        }
     },
     persistentState = null,
     windowImpl = null,
@@ -308,16 +314,25 @@ val VoiceInputAction = Action(icon = R.drawable.mic_fill,
     persistentState = { VoiceInputPersistentState(it) },
     windowImpl = { manager, persistentState ->
         val locales = manager.getActiveLocales()
+        val context = manager.getContext()
 
-        val model = ResourceHelper.tryFindingVoiceInputModelForLocale(manager.getContext(), locales.firstOrNull() ?: Locale.ROOT)
-
-        if(model == null) {
-            VoiceInputNoModelWindow(locales.firstOrNull() ?: Locale.ROOT)
-        } else {
-            VoiceInputActionWindow(
-                manager = manager, state = persistentState as VoiceInputPersistentState,
-                locales = locales, model = model
+        if(context.getSetting(USE_ANDROID_SPEECH_RECOGNIZER)) {
+            AndroidSpeechRecognizerWindow(
+                manager = manager,
+                state = persistentState as VoiceInputPersistentState,
+                locales = locales
             )
+        } else {
+            val model = ResourceHelper.tryFindingVoiceInputModelForLocale(context, locales.firstOrNull() ?: Locale.ROOT)
+
+            if(model == null) {
+                VoiceInputNoModelWindow(locales.firstOrNull() ?: Locale.ROOT)
+            } else {
+                VoiceInputActionWindow(
+                    manager = manager, state = persistentState as VoiceInputPersistentState,
+                    locales = locales, model = model
+                )
+            }
         }
     }
 )

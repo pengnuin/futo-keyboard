@@ -133,6 +133,13 @@
              android:taskAffinity="">
         </activity>
 
+        <activity android:name=".uix.ExternalSpeechInputActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:configChanges="orientation|screenLayout|screenSize|keyboardHidden|keyboard|uiMode|density" />
+
         <activity android:name=".spellcheck.SpellCheckerSettingsActivity"
              android:theme="@style/platformSettingsTheme"
              android:label="@string/android_spell_checker_settings"
@@ -220,10 +227,13 @@
             android:grantUriPermissions="true" />
     </application>
 
-    <!-- To query enabled input methods for voice IME detection -->
+    <!-- To query enabled input methods for voice IME detection and speech recognition services -->
     <queries>
         <intent>
             <action android:name="android.view.InputMethod" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
         </intent>
     </queries>
 </manifest>

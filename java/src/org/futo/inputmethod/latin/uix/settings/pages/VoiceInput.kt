@@ -1,5 +1,6 @@
 package org.futo.inputmethod.latin.uix.settings.pages
 
+import android.speech.SpeechRecognizer
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -14,10 +15,17 @@ import org.futo.inputmethod.latin.uix.CAN_EXPAND_SPACE
 import org.futo.inputmethod.latin.uix.DISALLOW_SYMBOLS
 import org.futo.inputmethod.latin.uix.ENABLE_SOUND
 import org.futo.inputmethod.latin.uix.PREFER_BLUETOOTH
+import org.futo.inputmethod.latin.uix.SPEECH_RECOGNIZER_COMPONENT
+import org.futo.inputmethod.latin.uix.SPEECH_RECOGNIZER_PARTIAL_RESULTS
+import org.futo.inputmethod.latin.uix.SPEECH_RECOGNIZER_PREFER_OFFLINE
 import org.futo.inputmethod.latin.uix.SYSTEM_VOICE_INPUT_PACKAGE
+import org.futo.inputmethod.latin.uix.USE_ANDROID_SPEECH_RECOGNIZER
 import org.futo.inputmethod.latin.uix.USE_PERSONAL_DICT
+import org.futo.inputmethod.latin.uix.USE_SPEECH_INTENT_FOR_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.USE_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.USE_VAD_AUTOSTOP
+import org.futo.inputmethod.latin.uix.actions.RecognitionServiceInfo
+import org.futo.inputmethod.latin.uix.actions.queryRecognitionServices
 import org.futo.inputmethod.latin.uix.settings.DropDownPickerSettingItem
 import org.futo.inputmethod.latin.uix.settings.NavigationItemStyle
 import org.futo.inputmethod.latin.uix.settings.Tip
@@ -29,7 +37,25 @@ import org.futo.inputmethod.latin.uix.settings.userSettingNavigationItem
 import org.futo.inputmethod.latin.uix.settings.userSettingToggleDataStore
 
 private val visibilityCheckNotSystemVoiceInput = @Composable {
-    useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == false
+    useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == false &&
+        useDataStoreValue(USE_ANDROID_SPEECH_RECOGNIZER) == false
+}
+
+private val visibilityCheckNotAndroidSpeechRecognizer = @Composable {
+    useDataStoreValue(USE_ANDROID_SPEECH_RECOGNIZER) == false
+}
+
+private val visibilityCheckAndroidSpeechRecognizer = @Composable {
+    useDataStoreValue(USE_ANDROID_SPEECH_RECOGNIZER) == true
+}
+
+private val visibilityCheckInlineVoiceInput = @Composable {
+    useDataStoreValue(USE_ANDROID_SPEECH_RECOGNIZER) == true ||
+        useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == false
+}
+
+private val visibilityCheckSystemVoiceInput = @Composable {
+    useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == true
 }
 
 private data class VoiceIMEInfo(
@@ -56,8 +82,67 @@ val VoiceInputMenu = UserSettingsMenu(
     title = R.string.voice_input_settings_title,
     navPath = "voiceInput", registerNavPath = true,
     settings = listOf(
+        userSettingToggleDataStore(
+            title = R.string.voice_input_settings_use_android_speech_recognizer,
+            subtitle = R.string.voice_input_settings_use_android_speech_recognizer_subtitle,
+            setting = USE_ANDROID_SPEECH_RECOGNIZER
+        ),
+
+        UserSetting(
+            name = R.string.voice_input_settings_speech_recognizer_service,
+            visibilityCheck = visibilityCheckAndroidSpeechRecognizer
+        ) {
+            val selectedComponent = useDataStore(SPEECH_RECOGNIZER_COMPONENT)
+            val context = LocalContext.current
+            val res = LocalResources.current
+
+            val options = remember(selectedComponent.value) {
+                buildList {
+                    add(
+                        RecognitionServiceInfo(
+                            componentName = "",
+                            label = res.getString(R.string.voice_input_settings_speech_recognizer_service_default),
+                            packageName = ""
+                        )
+                    )
+                    addAll(queryRecognitionServices(context))
+                }
+            }
+
+            val currOption = remember(selectedComponent.value, options) {
+                options.find { it.componentName == selectedComponent.value } ?: options[0]
+            }
+
+            DropDownPickerSettingItem(
+                stringResource(R.string.voice_input_settings_speech_recognizer_service),
+                options,
+                currOption,
+                {
+                    selectedComponent.setValue(it.componentName)
+                },
+                { it.label }
+            )
+
+            if (options.size == 1 && !SpeechRecognizer.isRecognitionAvailable(context)) {
+                Tip(stringResource(R.string.voice_input_settings_speech_recognizer_unavailable))
+            }
+        },
+
+        userSettingToggleDataStore(
+            title = R.string.voice_input_settings_speech_recognizer_partial_results,
+            subtitle = R.string.voice_input_settings_speech_recognizer_partial_results_subtitle,
+            setting = SPEECH_RECOGNIZER_PARTIAL_RESULTS
+        ).copy(visibilityCheck = visibilityCheckAndroidSpeechRecognizer),
+
+        userSettingToggleDataStore(
+            title = R.string.voice_input_settings_speech_recognizer_prefer_offline,
+            subtitle = R.string.voice_input_settings_speech_recognizer_prefer_offline_subtitle,
+            setting = SPEECH_RECOGNIZER_PREFER_OFFLINE
+        ).copy(visibilityCheck = visibilityCheckAndroidSpeechRecognizer),
+
         UserSetting(
             name = R.string.voice_input_settings_backend_system,
+            visibilityCheck = visibilityCheckNotAndroidSpeechRecognizer,
             searchTagList = listOf(
                 R.string.voice_input_settings_disable_builtin_voice_input,
                 R.string.voice_input_settings_disable_builtin_voice_input_subtitle
@@ -121,7 +206,7 @@ val VoiceInputMenu = UserSettingsMenu(
             title = R.string.voice_input_settings_indication_sounds,
             subtitle = R.string.voice_input_settings_indication_sounds_subtitle,
             setting = ENABLE_SOUND
-        ).copy(visibilityCheck = visibilityCheckNotSystemVoiceInput),
+        ).copy(visibilityCheck = visibilityCheckInlineVoiceInput),
 
         /*
         userSettingToggleDataStore(
