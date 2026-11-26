@@ -13,7 +13,9 @@
     <string name="speech_recognizer_initializing">Initializing…</string>
     <string name="speech_recognizer_listening">Listening… Tap to finish</string>
     <string name="speech_recognizer_processing">Processing…</string>
-    <string name="speech_recognizer_permission_required">Microphone permission required. Tap to grant.</string>
+    <string name="speech_recognizer_permission_required">Microphone permission required for FUTO Keyboard. Tap to grant.</string>
+    <string name="speech_recognizer_service_permission_required">The recognition service (%s) denied microphone permission. Grant Microphone permission to that app in Settings.</string>
+    <string name="speech_recognizer_open_service_settings">Service app settings</string>
     <string name="speech_recognizer_error_tap_retry">Tap to retry</string>
     <string name="speech_recognizer_cancel">Cancel</string>
     <string name="speech_recognizer_error_audio">Audio recording error</string>

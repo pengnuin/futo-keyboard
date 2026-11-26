@@ -5,9 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognitionService
 import android.speech.RecognizerIntent
@@ -100,7 +102,7 @@ private sealed interface RecognizerUiState {
     data object Listening : RecognizerUiState
     data object Processing : RecognizerUiState
     data object NoPermission : RecognizerUiState
-    data class Error(val message: String) : RecognizerUiState
+    data class Error(val message: String, val settingsPackage: String? = null) : RecognizerUiState
 }
 
 internal class AndroidSpeechRecognizerWindow(
@@ -196,6 +198,7 @@ internal class AndroidSpeechRecognizerWindow(
 
             override fun onError(error: Int) {
                 if (isClosed || wasFinished) return
+                Log.w(TAG, "SpeechRecognizer onError: $error (component=${component?.flattenToString()})")
                 rmsNormalized = 0f
                 if (shouldPlaySounds && !cancelPlayed) {
                     state.soundPlayer.playCancelSound()
@@ -204,7 +207,20 @@ internal class AndroidSpeechRecognizerWindow(
                 inputTransaction.cancel()
 
                 if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-                    uiState = RecognizerUiState.NoPermission
+                    if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        uiState = RecognizerUiState.NoPermission
+                    } else {
+                        val serviceName = component?.packageName ?: context.getString(
+                            R.string.voice_input_settings_speech_recognizer_service_default
+                        )
+                        uiState = RecognizerUiState.Error(
+                            message = context.getString(
+                                R.string.speech_recognizer_service_permission_required,
+                                serviceName
+                            ),
+                            settingsPackage = component?.packageName
+                        )
+                    }
                 } else {
                     uiState = RecognizerUiState.Error(mapErrorMessage(error))
                 }
@@ -307,6 +323,17 @@ internal class AndroidSpeechRecognizerWindow(
         context.startActivity(intent)
     }
 
+    private fun openAppSettings(pkg: String) {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:$pkg")
+        ).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    }
+
     private fun mapErrorMessage(error: Int): String = when (error) {
         SpeechRecognizer.ERROR_AUDIO -> context.getString(R.string.speech_recognizer_error_audio)
         SpeechRecognizer.ERROR_CLIENT -> context.getString(R.string.speech_recognizer_error_client)
@@ -365,7 +392,13 @@ internal class AndroidSpeechRecognizerWindow(
                     onClick = {
                         when (uiState) {
                             RecognizerUiState.Listening -> stopListening()
-                            RecognizerUiState.NoPermission -> openMicPermissionActivity()
+                            RecognizerUiState.NoPermission -> {
+                                if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                    retryRecognition()
+                                } else {
+                                    openMicPermissionActivity()
+                                }
+                            }
                             is RecognizerUiState.Error -> retryRecognition()
                             RecognizerUiState.Initializing, RecognizerUiState.Processing -> Unit
                         }
@@ -438,7 +471,16 @@ internal class AndroidSpeechRecognizerWindow(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Row(modifier = Modifier.padding(top = 8.dp)) {
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val settingsPkg = (uiState as? RecognizerUiState.Error)?.settingsPackage
+                    if (settingsPkg != null) {
+                        TextButton(onClick = { openAppSettings(settingsPkg) }) {
+                            Text(stringResource(R.string.speech_recognizer_open_service_settings))
+                        }
+                    }
                     TextButton(onClick = { manager.closeActionWindow() }) {
                         Text(stringResource(R.string.speech_recognizer_cancel))
                     }
