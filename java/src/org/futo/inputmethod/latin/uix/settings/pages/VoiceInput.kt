@@ -55,7 +55,8 @@ private val visibilityCheckInlineVoiceInput = @Composable {
 }
 
 private val visibilityCheckSystemVoiceInput = @Composable {
-    useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == true
+    useDataStoreValue(USE_SYSTEM_VOICE_INPUT) == true &&
+        useDataStoreValue(USE_ANDROID_SPEECH_RECOGNIZER) == false
 }
 
 private data class VoiceIMEInfo(
@@ -200,6 +201,12 @@ val VoiceInputMenu = UserSettingsMenu(
                         currOption?.name ?: externalPkg.value))
             }
         },
+
+        userSettingToggleDataStore(
+            title = R.string.voice_input_settings_external_use_speech_panel,
+            subtitle = R.string.voice_input_settings_external_use_speech_panel_subtitle,
+            setting = USE_SPEECH_INTENT_FOR_SYSTEM_VOICE_INPUT
+        ).copy(visibilityCheck = visibilityCheckSystemVoiceInput),
 
         //if(!systemVoiceInput.value) {
         userSettingToggleDataStore(

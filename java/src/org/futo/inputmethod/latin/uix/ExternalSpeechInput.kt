@@ -59,6 +59,12 @@ object ExternalSpeechInput {
 
     private var session: Session? = null
 
+    private const val EXTRA_TARGET_PACKAGE = "target_package"
+    private const val EXTRA_LANGUAGE_TAG = "language_tag"
+
+    internal const val KEY_TARGET_PACKAGE = EXTRA_TARGET_PACKAGE
+    internal const val KEY_LANGUAGE_TAG = EXTRA_LANGUAGE_TAG
+
     /**
      * Opens the speech panel. Returns false if that was not possible, so the caller can fall back
      * to the old keyboard-switching behaviour.
@@ -70,11 +76,18 @@ object ExternalSpeechInput {
         val editor = ime.getBaseInputEditorInfo()
         val s = Session(ime, editor?.packageName, editor?.fieldId ?: -1)
 
-        val intent = Intent(ime, ExternalSpeechInputActivity::class.java).addFlags(
-            Intent.FLAG_ACTIVITY_NEW_TASK or
+        val targetPkg = ime.getSetting(SYSTEM_VOICE_INPUT_PACKAGE).takeIf { it.isNotBlank() }
+        val languageTag = manager.getActiveLocales().firstOrNull()?.toLanguageTag()
+
+        val intent = Intent(ime, ExternalSpeechInputActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_NO_ANIMATION or
                     Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-        )
+            )
+            if (targetPkg != null) putExtra(EXTRA_TARGET_PACKAGE, targetPkg)
+            if (languageTag != null) putExtra(EXTRA_LANGUAGE_TAG, languageTag)
+        }
         try {
             ime.startActivity(intent)
         } catch (e: Exception) {
@@ -207,7 +220,10 @@ class ExternalSpeechInputActivity : ComponentActivity() {
         // After recreation the pending result is delivered to speechLauncher; do not start again.
         if (savedInstanceState != null) return
 
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        val targetPkg = intent?.getStringExtra(ExternalSpeechInput.KEY_TARGET_PACKAGE)
+        val languageTag = intent?.getStringExtra(ExternalSpeechInput.KEY_LANGUAGE_TAG)
+
+        val speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
@@ -216,10 +232,19 @@ class ExternalSpeechInputActivity : ComponentActivity() {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
             putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+            if (!languageTag.isNullOrBlank()) {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+            }
+            if (!targetPkg.isNullOrBlank()) {
+                setPackage(targetPkg)
+                if (packageManager.resolveActivity(this, 0) == null) {
+                    setPackage(null)
+                }
+            }
         }
 
         try {
-            speechLauncher.launch(intent)
+            speechLauncher.launch(speechIntent)
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(this, R.string.external_voice_input_no_app, Toast.LENGTH_LONG).show()
             ExternalSpeechInput.onResult(null)
